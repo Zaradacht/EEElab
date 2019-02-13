@@ -152,3 +152,5 @@ userSchema.statics.getAuthenticated = function(username, password, cb) {
 User = mongoose.model("User", userSchema);
 
 module.exports = User;
+
+// http://devsmash.com/blog/implementing-max-login-attempts-with-mongoose
