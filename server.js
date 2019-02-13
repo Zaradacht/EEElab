@@ -16,9 +16,16 @@ app.use(bodyParser.json());
 const db = require("./config/keys").mongoURI;
 // connecting to db
 mongoose
-  .connect(db, { useNewUrlParser: true, useFindAndModify: false })
+  .connect(db, {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    useCreateIndex: true
+  })
   .then(() => console.log("MongoDB Connected Successfuly!"))
   .catch(err => console.log(err));
+
+// mounting routes
+app.use("/", indexRoutes);
 
 // Serve static assets if in production
 if (process.env.NODE_ENV === "production") {
@@ -29,9 +36,6 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.resolve(__dirname, "client", "build", "index.html"))
   );
 }
-
-// using routes
-app.use("/", indexRoutes);
 
 // setting PORT
 const PORT = process.env.PORT || 5000;
