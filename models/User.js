@@ -63,7 +63,7 @@ userSchema.pre("save", function(next) {
           .then(hash => {
             this.password = hash;
             this.updated_at = new Date().toISOString();
-            next();
+            return next();
           })
           .catch(err => next(err));
       })
@@ -127,6 +127,7 @@ userSchema.statics.getAuthenticated = function(username, password, cb) {
         // check if the password was a match
         if (isMatch) {
           // if there's no lock or failed attempts, just return the user
+          // console.log("what user looks like: " + user);
           if (!user.loginAttempts && !user.lockUntil) return cb(null, user);
           // reset attempts and lock info
           var updates = {
@@ -142,8 +143,11 @@ userSchema.statics.getAuthenticated = function(username, password, cb) {
 
       // password is incorrect, so increment login attempts before responding
       user.incLoginAttempts(err => {
-        if (err) return cb(err);
-        return cb(null, null, reasons.PASSWORD_INCORRECT);
+        if (err) {
+          return cb(err);
+        } else {
+          return cb(null, null, reasons.PASSWORD_INCORRECT);
+        }
       });
     })
     .catch(err => cb(err));

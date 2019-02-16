@@ -1,20 +1,29 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const session = require("express-session");
 const path = require("path");
+const keys = require("./config/keys");
+const passport = require("passport");
+const MongoStore = require("connect-mongo")(session);
+const logger = require("morgan");
 
 const app = express();
 
+app.use(logger("dev"));
+
+require("./config/passport")(passport);
 // requiring routes
-const indexRoutes = require("./routes/index");
+const indexRoutes = require("./routes/api/index");
 
 // body parser middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // setting db
-const db = require("./config/keys").mongoURI;
-// connecting to db
+// const db = require("./config/keys").mongoURI;
+const db = require("./config/keys_dev").mongoDevURI;
+//connecting to db
 mongoose
   .connect(db, {
     useNewUrlParser: true,
@@ -24,8 +33,19 @@ mongoose
   .then(() => console.log("MongoDB Connected Successfuly!"))
   .catch(err => console.log(err));
 
+app.use(
+  session({
+    secret: keys.secretOrKey,
+    resave: false,
+    store: new MongoStore({ mongooseConnection: mongoose.connection }),
+    saveUninitialized: false
+  })
+);
+// passport config
+app.use(passport.initialize());
+app.use(passport.session());
 // mounting routes
-app.use("/", indexRoutes);
+app.use("/api/", indexRoutes);
 
 // Serve static assets if in production
 if (process.env.NODE_ENV === "production") {

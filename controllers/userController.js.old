@@ -1,0 +1,182 @@
+const User = require("../models/User");
+
+const validateSignupInput = require("../middleware/validation/signup");
+const validateLoginInput = require("../middleware/validation/login");
+
+exports.validate = method => (req, res, next) => {
+  switch (method) {
+    case "signup": {
+      const { data, errors, isValid } = validateSignupInput(req.body);
+      if (!isValid) {
+        res.locals.errors = errors;
+        next();
+      } else {
+        res.locals = { ...data };
+        next();
+      }
+    }
+    case "login": {
+      const { data, errors, isValid } = validateLoginInput(req.body);
+      if (!isValid) {
+        res.locals.errors = errors;
+        next();
+      } else {
+        res.locals = { ...data };
+        next();
+      }
+    }
+  }
+};
+
+// exports.signup = async (req, res, next) => {
+//   let errors = {};
+//   const data = { ...res.locals };
+//   if (data.errors) {
+//     console.log("I did this[if]");
+//     return res.status(403).json({
+//       username: data.username,
+//       email: data.email,
+//       errors: data.errors
+//     });
+//   }
+//   console.log("I did this[else]");
+//   if (res.headersSent) {
+//     console.log("Header already sent ");
+//   }
+//   try {
+//     const user = await User.findOne({
+//       $or: [{ username: data.username }, { email: data.email }]
+//     });
+//     console.log("I did this2");
+//     if (res.headersSent) {
+//       console.log(
+//         "2-Header already sent " + JSON.stringify(res.getHeaders(), null, 2)
+//       );
+//     }
+//     console.log("I did this3");
+//     if (user) {
+//       if (user.username == data.username) {
+//         errors.username = "The username is already used";
+//       }
+//       if (user.email == data.email) {
+//         errors.email = "email is already used.";
+//       }
+//       return res.status(403).json(errors);
+//     } else {
+//       // create the user
+//       const newUser = new User({
+//         username: data.username,
+//         password: data.password,
+//         email: data.email
+//       });
+//       const createdUser = await newUser.save();
+//       if (createdUser) {
+//         return res.json(user);
+//       }
+//     }
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
+
+exports.signup = (req, res, next) => {
+  let errors = {};
+  const data = { ...res.locals };
+  if (data.errors) {
+    console.log("I did this[if]");
+    return res.status(403).json({
+      username: data.username,
+      email: data.email,
+      errors: data.errors
+    });
+  }
+  console.log("I did this[else]");
+  if (res.headersSent) {
+    console.log("Header already sent ");
+  }
+  User.findOne({
+    $or: [{ username: data.username }, { email: data.email }]
+  })
+    .then(user => {
+      res.removeHeader();
+      if (res.headersSent) {
+        console.log(
+          "2-Header already sent " +
+            JSON.stringify(res.getHeaders(), null, 2) +
+            "Headercontent = " +
+            res.getHeader("content-type")
+        );
+        console.log("user: " + JSON.stringify(user, null, 2));
+        console.log("INPUTDATA: " + JSON.stringify(data, null, 2));
+      }
+      if (user != null) {
+        if (user.username == data.username) {
+          errors.username = "The username is already used";
+        } else if (user.email == data.email) {
+          errors.email = "email is already used.";
+        }
+        return res.status(403).json(errors);
+      } else {
+        // create the user
+        const newUser = new User({
+          username: data.username,
+          password: data.password,
+          email: data.email
+        });
+        newUser
+          .save()
+          .then(user => res.json(user))
+          .catch(err => {
+            console.log(err);
+            res.sendStatus(500);
+            return;
+          });
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500);
+      return;
+    });
+};
+
+exports.login = (req, res, next) => {
+  let errors = {};
+  const data = { ...res.locals };
+  if (data.errors) {
+    return res
+      .status(403)
+      .json({ username: data.username, email: data.email, errors });
+  }
+  // attempt to authenticate user
+  User.getAuthenticated(
+    res.locals.username,
+    res.locals.password,
+    (err, user, reason) => {
+      if (err) {
+        // throw err;
+        console.log(err);
+        res.sendStatus(500);
+        return;
+      }
+      // login was successful if we have a user
+      if (user) {
+        res.status(200).json({ success: true, user });
+        return;
+      } else {
+        // otherwise we can determine why we failed
+        const reasons = User.failedLogin;
+        const errors = {};
+        switch (reason) {
+          case reasons.NOT_FOUND:
+            errors.reason = "Account not found.";
+          case reasons.PASSWORD_INCORRECT:
+            errors.reason = "Password is incorrect.";
+          case reasons.MAX_ATTEMPTS:
+            errors.reason = "Max attempts reached.";
+        }
+        // return res.status(403).json({ errors }); // HERE THE HTTP HEADER DOES GET SENT TWICE. PLEASE CHECK THIS LATER.
+      }
+    }
+  );
+};

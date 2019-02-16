@@ -1,0 +1,55 @@
+const LocalStrategy = require("passport-local").Strategy;
+
+const User = require("../models/User");
+
+module.exports = passport => {
+  passport.use(
+    new LocalStrategy((username, password, done) => {
+      User.findOne({ username })
+        .then(user => {
+          if (!user) {
+            return done(null, false, { message: "Incorrect username" });
+          } else {
+            // attempt to authenticate user
+            User.getAuthenticated(username, password, (err, user, reason) => {
+              if (err) {
+                console.log(err);
+                res.sendStatus(500);
+                return;
+              }
+              // login was successful if we have a user
+              if (user) {
+                return done(null, user);
+              } else {
+                // otherwise we can determine why we failed
+                const reasons = User.failedLogin;
+                const errors = {};
+                switch (reason) {
+                  case reasons.NOT_FOUND:
+                    errors.reason = "Account not found.";
+                  case reasons.PASSWORD_INCORRECT:
+                    errors.reason = "Password is incorrect.";
+                    break;
+                  case reasons.MAX_ATTEMPTS:
+                    errors.reason = "Max attempts reached.";
+                    break;
+                }
+                return done(null, false, { message: errors.reason });
+              }
+            });
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          res.sendStatus(500);
+          return;
+        });
+    })
+  );
+  passport.serializeUser((user, done) => {
+    return done(null, user);
+  });
+  passport.deserializeUser((user, done) => {
+    return done(null, user);
+  });
+};
