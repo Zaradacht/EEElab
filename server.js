@@ -1,10 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const session = require("express-session");
 const path = require("path");
 const keys = require("./config/keys");
-const MongoStore = require("connect-mongo")(session);
+// const session = require("express-session");
+// const MongoStore = require("connect-mongo")(session);
 const logger = require("morgan");
 
 const app = express();
@@ -20,8 +20,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // setting db
-const db = require("./config/keys").mongoURI;
-// const db = require("./config/keys_dev").mongoDevURI;
+const db = keys.mongoURI;
+// const db = keys.mongoDevURI;
 //connecting to db
 mongoose
   .connect(db, {
