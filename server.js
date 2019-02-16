@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const path = require("path");
 const keys = require("./config/keys");
-const passport = require("passport");
 const MongoStore = require("connect-mongo")(session);
 const logger = require("morgan");
 
@@ -33,17 +32,18 @@ mongoose
   .then(() => console.log("MongoDB Connected Successfuly!"))
   .catch(err => console.log(err));
 
-app.use(
-  session({
-    secret: keys.secretOrKey,
-    resave: false,
-    store: new MongoStore({ mongooseConnection: mongoose.connection }),
-    saveUninitialized: false
-  })
-);
+// app.use(
+//   session({
+//     secret: keys.secretOrKey,
+//     resave: false,
+//     store: new MongoStore({ mongooseConnection: mongoose.connection }),
+//     saveUninitialized: false
+//   })
+// );
 // passport config
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.initialize());
+// app.use(passport.session());
+
 // mounting routes
 app.use("/api/", indexRoutes);
 
