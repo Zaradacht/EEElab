@@ -6,6 +6,7 @@ const User = require("../../models/User");
 // user controller
 const userController = require("../../controllers/userController");
 
+router.get("/test", (req, res) => res.json({ msg: "Users Works" }));
 // @route   POST /signup
 // @desc    Create a new user
 // @access  Public

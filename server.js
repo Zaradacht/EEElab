@@ -12,7 +12,7 @@ const app = express();
 
 app.use(logger("dev"));
 
-require("./config/passport")(passport);
+// require("./config/passport")(passport);
 // requiring routes
 const indexRoutes = require("./routes/api/index");
 
@@ -47,14 +47,14 @@ app.use(passport.session());
 // mounting routes
 app.use("/api/", indexRoutes);
 
-// Serve static assets if in production
+// Server static assets if in production
 if (process.env.NODE_ENV === "production") {
-  // static folder
+  // Set static folder
   app.use(express.static("client/build"));
 
-  app.get("*", (req, res) =>
-    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"))
-  );
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
+  });
 }
 
 // setting PORT
